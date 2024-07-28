@@ -7,7 +7,6 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
-	"slices"
 	"sync"
 	"time"
 
@@ -20,6 +19,7 @@ type rider struct {
 	entrance  string
 	vipStatus bool
 }
+
 type rollercoaster struct {
 	nextId      int64
 	idMu        sync.Mutex
@@ -39,29 +39,30 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	rc := rollercoaster{
-		ride: make([]*rider, numberOfCars*carCapacity),
+		ride: make([]*rider, 0, numberOfCars*carCapacity),
 	}
-	rc.start(ctx)
+	go rc.start(ctx)
 	err := http.ListenAndServe(":3000", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
 		d := &struct {
 			Entrance string `json:"entrance"`
 		}{}
 		json.NewDecoder(r.Body).Decode(d)
-		isVIP := false
-		if rand.Float64() >= 0.7 {
-			isVIP = true
-		}
+		isVIP := rand.Float64() >= 0.7
 
 		rc.idMu.Lock()
 		rider := &rider{id: rc.nextId, entrance: d.Entrance, name: namesgenerator.GetRandomName(0), vipStatus: isVIP}
-		rc.nextId = rc.nextId + 1
+		rc.nextId++
 		rc.idMu.Unlock()
+
+		rc.rideQueueMu.Lock()
 		if rider.vipStatus {
-			rc.rideQueue = slices.Insert(rc.rideQueue, 0, rider)
+			rc.rideQueue = append([]*rider{rider}, rc.rideQueue...)
 		} else {
 			rc.rideQueue = append(rc.rideQueue, rider)
 		}
-		log.Printf("Entrace %s: %s entered the queue. Size: %d\n", d.Entrance, rider.name, len(rc.rideQueue))
+		rc.rideQueueMu.Unlock()
+		log.Printf("Entrance %s: %s entered the queue. Size: %d\n", d.Entrance, rider.name, len(rc.rideQueue))
 	}))
 	if err != nil {
 		panic(err)
@@ -75,21 +76,17 @@ func (rc *rollercoaster) start(ctx context.Context) {
 			return
 		default:
 			rc.rideMu.Lock()
-			i := 0
-			for ; i <= len(rc.rideQueue)-1; i++ {
-				if i == carCapacity*numberOfCars {
-					break
-				}
-				rc.rideQueueMu.Lock()
+			rc.rideQueueMu.Lock()
+			for i := 0; i < numberOfCars*carCapacity && len(rc.rideQueue) > 0; i++ {
 				r := rc.rideQueue[0]
-				car := int(math.Abs(float64((i)/2))) + 1
+				car := int(math.Floor(float64(i) / carCapacity)) + 1
 				carSeat := i % carCapacity
 				rc.seatRider(r, car, carSeat)
 				rc.rideQueue = rc.rideQueue[1:]
-				rc.rideQueueMu.Unlock()
 			}
+			rc.rideQueueMu.Unlock()
 			log.Println("Ride: started")
-			time.Sleep(10000 * time.Millisecond)
+			time.Sleep(rideDuration * time.Millisecond)
 			log.Println("Ride: finished")
 			rc.rideMu.Unlock()
 		}
