@@ -16,3 +16,20 @@ Server Code Fixes
  4. Append Riders Properly: Used slices.Insert and append correctly to maintain the queue.
 
      Used 'append([]*rider{rider}, rc.rideQueue...)' for inserting VIP riders at the front.
+
+
+
+
+
+
+Client Code Fixes
+
+1. Proper Error Handling: Added error handling for HTTP requests.
+
+     I Added checks to handle errors returned by 'http.Post'.
+
+2. Proper Random Number Generation: Ensured 'rand' is seeded properly for random sleep durations.
+
+    I Used 'rand.Seed(time.Now().UnixNano())' to seed the random number generator.
+
+
