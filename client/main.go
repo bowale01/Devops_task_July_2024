@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"math/rand/v2"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,21 +23,29 @@ func main() {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 	<-shutdown
+	cancel()
 }
 
 func runEntrance(ctx context.Context, name string, minWaitTime, maxWaitTime int) {
+	rand.Seed(time.Now().UnixNano())
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			time.Sleep(time.Duration(rand.IntN(maxWaitTime-minWaitTime)+minWaitTime) * time.Millisecond)
+			waitTime := time.Duration(rand.Intn(maxWaitTime-minWaitTime)+minWaitTime) * time.Millisecond
+			time.Sleep(waitTime)
 			d, _ := json.Marshal(struct {
 				Entrance string `json:"entrance"`
 			}{
 				Entrance: name,
 			})
-			http.Post("http://localhost:3000", "application/json", bytes.NewBuffer(d))
+			resp, err := http.Post("http://localhost:3000", "application/json", bytes.NewBuffer(d))
+			if err != nil {
+				log.Printf("Error sending request: %v", err)
+				continue
+			}
+			resp.Body.Close()
 		}
 	}
 }
