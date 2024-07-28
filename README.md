@@ -1,5 +1,3 @@
-# Devops_Task_July_2024
-
 # DevOps Engineer task assignment
 
 ## Preface
