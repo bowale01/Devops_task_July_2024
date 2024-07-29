@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"math"
 	"math/rand"
 	"net/http"
-	"slices"
 	"sync"
 	"time"
 
@@ -20,6 +18,7 @@ type rider struct {
 	entrance  string
 	vipStatus bool
 }
+
 type rollercoaster struct {
 	nextId      int64
 	idMu        sync.Mutex
@@ -39,29 +38,35 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	rc := rollercoaster{
-		ride: make([]*rider, numberOfCars*carCapacity),
+		ride: make([]*rider, 0, numberOfCars*carCapacity),
 	}
-	rc.start(ctx)
+	go rc.start(ctx)
 	err := http.ListenAndServe(":3000", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		d := &struct {
 			Entrance string `json:"entrance"`
 		}{}
-		json.NewDecoder(r.Body).Decode(d)
-		isVIP := false
-		if rand.Float64() >= 0.7 {
-			isVIP = true
+		if err := json.NewDecoder(r.Body).Decode(d); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
+		isVIP := rand.Float64() >= 0.7
+
 		rc.idMu.Lock()
-		rider := &rider{id: rc.nextId, entrance: d.Entrance, name: namesgenerator.GetRandomName(0), vipStatus: isVIP}
-		rc.nextId = rc.nextId + 1
+		r := &rider{id: rc.nextId, entrance: d.Entrance, name: namesgenerator.GetRandomName(0), vipStatus: isVIP}
+		rc.nextId++
 		rc.idMu.Unlock()
-		if rider.vipStatus {
-			rc.rideQueue = slices.Insert(rc.rideQueue, 0, rider)
+
+		rc.rideQueueMu.Lock()
+		if r.vipStatus {
+			rc.rideQueue = append([]*rider{r}, rc.rideQueue...)
 		} else {
-			rc.rideQueue = append(rc.rideQueue, rider)
+			rc.rideQueue = append(rc.rideQueue, r)
 		}
-		log.Printf("Entrace %s: %s entered the queue. Size: %d\n", d.Entrance, rider.name, len(rc.rideQueue))
+		queueSize := len(rc.rideQueue)
+		rc.rideQueueMu.Unlock()
+
+		log.Printf("Entrance %s: %s entered the queue. Size: %d\n", d.Entrance, r.name, queueSize)
 	}))
 	if err != nil {
 		panic(err)
@@ -74,31 +79,43 @@ func (rc *rollercoaster) start(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			rc.rideMu.Lock()
-			i := 0
-			for ; i <= len(rc.rideQueue)-1; i++ {
-				if i == carCapacity*numberOfCars {
-					break
-				}
-				rc.rideQueueMu.Lock()
-				r := rc.rideQueue[0]
-				car := int(math.Abs(float64((i)/2))) + 1
+			rc.rideQueueMu.Lock()
+			for i := 0; i < numberOfCars*carCapacity && i < len(rc.rideQueue); i++ {
+				rc.rideQueueMu.Unlock()
+
+				rc.rideMu.Lock()
+				r := rc.rideQueue[i]
+				rc.ride = append(rc.ride, r)
+				car := i / carCapacity
 				carSeat := i % carCapacity
 				rc.seatRider(r, car, carSeat)
-				rc.rideQueue = rc.rideQueue[1:]
-				rc.rideQueueMu.Unlock()
+				rc.rideMu.Unlock()
+
+				rc.rideQueueMu.Lock()
 			}
+			rc.rideQueue = rc.rideQueue[min(numberOfCars*carCapacity, len(rc.rideQueue)):]
+			rc.rideQueueMu.Unlock()
+
 			log.Println("Ride: started")
-			time.Sleep(10000 * time.Millisecond)
+			time.Sleep(rideDuration * time.Millisecond)
 			log.Println("Ride: finished")
+
+			rc.rideMu.Lock()
+			rc.ride = rc.ride[:0] // Clear the ride
 			rc.rideMu.Unlock()
 		}
 	}
 }
 
 func (rc *rollercoaster) seatRider(r *rider, car, carSeat int) {
-	log.Printf("Ride: %s entering the car %d in seat %d\n", r.name, car, carSeat)
+	log.Printf("Ride: %s entering the car %d in seat %d\n", r.name, car+1, carSeat+1)
 	time.Sleep(400 * time.Millisecond)
-	rc.ride = append(rc.ride, r)
-	log.Printf("Ride: %s entered the car %d in seat %d\n", r.name, car, carSeat)
+	log.Printf("Ride: %s entered the car %d in seat %d\n", r.name, car+1, carSeat+1)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
