@@ -3,8 +3,8 @@ Server Code Fixes
 Changes Made
 
 1. Imports
-     Removed the 'slices' package: The original code used 'slices.Insert', which is not a part of the standard Go library. It seems to be an error or a placeholder for functionality to insert elements into a slice.
-     Replaced 'slices.Insert' with a custom implementation: The insertion of VIP riders at the start of the queue is now handled by creating a new slice and appending the VIP rider at the start.
+ Removed the 'slices' package: The original code used 'slices.Insert', which is not a part of the standard Go library. It seems to be an error or a placeholder for functionality to insert elements into a slice.
+Replaced 'slices.Insert' with a custom implementation: The insertion of VIP riders at the start of the queue is now handled by creating a new slice and appending the VIP rider at the start.
 
 2. Queue Handling
 Added locks to ensure thread-safe access to 'rideQueue':
