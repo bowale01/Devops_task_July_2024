@@ -1,0 +1,10 @@
+# Server Dockerfile
+FROM golang:1.18-alpine as build
+WORKDIR /app
+COPY . .
+RUN go build -o server_new
+
+FROM alpine:3.15
+WORKDIR /app
+COPY --from=build /app/server_new .
+CMD ["./server_new"]
