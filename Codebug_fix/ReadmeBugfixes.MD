@@ -21,14 +21,35 @@ Server Code Fixes
 
 
 
-
 Client Code Fixes
 
-1. Proper Error Handling: Added error handling for HTTP requests.
+1. Fixed the rand import:
 
-     I Added checks to handle errors returned by 'http.Post'.
+      Changed math/rand/v2 to math/rand.
 
-2. Proper Random Number Generation: Ensured 'rand' is seeded properly for random sleep durations.
 
-    I Used 'rand.Seed(time.Now().UnixNano())' to seed the random number generator.
+2. Seeding the random number generator:
+
+      Added rand.Seed(time.Now().UnixNano()) inside the runEntrance function.
+
+3. Corrected the range for rand.IntN:
+
+     Changed rand.IntN(maxWaitTime-minWaitTime)+minWaitTime to rand.IntN(maxWaitTime-minWaitTime+1)+minWaitTime.
+
+4. Added proper error handling for JSON marshalling:
+
+      Added a check for errors when calling json.Marshal.
+      Used log.Printf to log any errors encountered.
+
+5. Added proper error handling for HTTP POST requests:
+
+      Added a check for errors when calling http.Post.
+      Used log.Printf to log any errors encountered.
+      Closed the response body with resp.Body.Close().
+
+6. Logging for shutdown:
+
+      Added a log message to indicate when a shutdown signal is received.
+
+These changes ensure that the program runs correctly, handles errors gracefully, and logs relevant information for debugging.
 
