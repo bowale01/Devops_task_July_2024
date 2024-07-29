@@ -37,10 +37,13 @@ const (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	rc := rollercoaster{
 		ride: make([]*rider, 0, numberOfCars*carCapacity),
 	}
+
 	go rc.start(ctx)
+
 	err := http.ListenAndServe(":3000", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		d := &struct {
 			Entrance string `json:"entrance"`
@@ -53,20 +56,20 @@ func main() {
 		isVIP := rand.Float64() >= 0.7
 
 		rc.idMu.Lock()
-		rider := &rider{id: rc.nextId, entrance: d.Entrance, name: namesgenerator.GetRandomName(0), vipStatus: isVIP}
+		newRider := &rider{id: rc.nextId, entrance: d.Entrance, name: namesgenerator.GetRandomName(0), vipStatus: isVIP}
 		rc.nextId++
 		rc.idMu.Unlock()
 
 		rc.rideQueueMu.Lock()
-		if rider.vipStatus {
-			rc.rideQueue = append([]*rider{rider}, rc.rideQueue...)
+		if newRider.vipStatus {
+			rc.rideQueue = append([]*rider{newRider}, rc.rideQueue...)
 		} else {
-			rc.rideQueue = append(rc.rideQueue, rider)
+			rc.rideQueue = append(rc.rideQueue, newRider)
 		}
 		queueSize := len(rc.rideQueue)
 		rc.rideQueueMu.Unlock()
 
-		log.Printf("Entrance %s: %s entered the queue. Size: %d\n", d.Entrance, rider.name, queueSize)
+		log.Printf("Entrance %s: %s entered the queue. Size: %d\n", d.Entrance, newRider.name, queueSize)
 	}))
 	if err != nil {
 		panic(err)
@@ -81,22 +84,19 @@ func (rc *rollercoaster) start(ctx context.Context) {
 		default:
 			rc.rideQueueMu.Lock()
 			if len(rc.rideQueue) > 0 {
-				// Process riders for the ride
 				for i := 0; i < numberOfCars*carCapacity && i < len(rc.rideQueue); i++ {
-					rider := rc.rideQueue[i]
-					rc.ride = append(rc.ride, rider)
+					r := rc.rideQueue[i]
+					rc.ride = append(rc.ride, r)
 					car := i / carCapacity
 					carSeat := i % carCapacity
 					rc.rideQueueMu.Unlock()
 
 					rc.rideMu.Lock()
-					rc.seatRider(rider, car, carSeat)
+					rc.seatRider(r, car, carSeat)
 					rc.rideMu.Unlock()
 
 					rc.rideQueueMu.Lock()
 				}
-
-				// Remove seated riders from the queue
 				rc.rideQueue = rc.rideQueue[min(numberOfCars*carCapacity, len(rc.rideQueue)):]
 			}
 			rc.rideQueueMu.Unlock()
