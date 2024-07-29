@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN go build -o server server.go
+RUN go build -o server main.go
 
 # Stage 2: Create the final image
 FROM alpine:latest
