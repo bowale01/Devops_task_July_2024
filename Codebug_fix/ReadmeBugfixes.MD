@@ -1,21 +1,29 @@
 Server Code Fixes
 
-  1. Proper Mutex Usage: I Ensured proper locking and unlocking mechanisms to prevent data races.
+Changes Made
 
-     I Added proper use of 'rideQueueMu' and 'rideMu' to avoid race conditions when accessing 'rideQueue' and 'ride'.
+Imports
+•	Removed the slices package: The original code used slices.Insert, which is not a part of the standard Go library. It seems to be an error or a placeholder for functionality to insert elements into a slice.
+•	Replaced slices.Insert with a custom implementation: The insertion of VIP riders at the start of the queue is now handled by creating a new slice and appending the VIP rider at the start.
 
- 2. Check for Ride Capacity: I Ensured that the ride queue does not exceed the capacity of the ride.
+Queue Handling
+•	Added locks to ensure thread-safe access to rideQueue:
+   o	Lock acquisition before modifying the queue: The rideQueueMu mutex is locked before modifying the rideQueue to ensure that concurrent access does not corrupt the state of the queue.
+   o	Queue size logging: The size of the queue is logged after adding a new rider.
 
-     Added logic to ensure that only the required number of riders are moved from the queue to the ride.
-    
- 3. Decoding JSON Request: I Ensured the JSON request body is properly decoded and the body is closed after reading.
+Seating Riders
+•	Fixed seating logic to avoid concurrency issues:
+o	Properly locking rideQueue during seating: Riders are moved from rideQueue to ride in a thread-safe manner by locking rideQueueMu and rideMu appropriately.
+o	Proper car and seat assignment: The car and seat calculations were adjusted to ensure riders are seated correctly.
 
-       Added 'defer r.Body.Close()' to close the request body after reading.
+Ride Logic
+•	Fixed the start method to handle the ride correctly:
+   o	Loop to process riders: The loop in the start method now properly iterates over rideQueue and transfers riders to ride.
+   o	Clearing the queue after processing: The rideQueue is truncated to remove riders who have been moved to the ride.
+   o	Log messages for ride start and finish: Added logging to indicate when the ride starts and finishes.
+   o	Clearing the ride array: After the ride duration, the ride array is cleared to simulate the end of the ride.
 
-
- 4. Append Riders Properly: Used slices.Insert and append correctly to maintain the queue.
-
-     Used 'append([]*rider{rider}, rc.rideQueue...)' for inserting VIP riders at the front.
+By making these changes, the code now correctly handles the rollercoaster queue, seats riders properly, and ensures that the ride logic works without concurrency issues
 
 
 
