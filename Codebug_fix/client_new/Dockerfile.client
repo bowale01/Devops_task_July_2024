@@ -1,5 +1,5 @@
 # Client Dockerfile
-FROM go:1.23-alpine as build
+FROM golang:1.23-alpine as build
 WORKDIR /app
 COPY . .
 RUN go build -o client_new
