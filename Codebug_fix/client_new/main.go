@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -23,7 +24,7 @@ func main() {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 	<-shutdown
-	cancel()
+	log.Println("Shutdown signal received, exiting...")
 }
 
 func runEntrance(ctx context.Context, name string, minWaitTime, maxWaitTime int) {
@@ -33,16 +34,20 @@ func runEntrance(ctx context.Context, name string, minWaitTime, maxWaitTime int)
 		case <-ctx.Done():
 			return
 		default:
-			waitTime := time.Duration(rand.Intn(maxWaitTime-minWaitTime)+minWaitTime) * time.Millisecond
-			time.Sleep(waitTime)
-			d, _ := json.Marshal(struct {
+			sleepDuration := time.Duration(rand.Intn(maxWaitTime-minWaitTime+1) + minWaitTime) * time.Millisecond
+			time.Sleep(sleepDuration)
+			d, err := json.Marshal(struct {
 				Entrance string `json:"entrance"`
 			}{
 				Entrance: name,
 			})
+			if err != nil {
+				log.Printf("Error marshalling JSON: %v\n", err)
+				continue
+			}
 			resp, err := http.Post("http://localhost:3000", "application/json", bytes.NewBuffer(d))
 			if err != nil {
-				log.Printf("Error sending request: %v", err)
+				log.Printf("Error making POST request: %v\n", err)
 				continue
 			}
 			resp.Body.Close()
