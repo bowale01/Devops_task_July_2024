@@ -1,3 +1,3 @@
-module github.com/bowale01/Devops_Task_July_2024/client_new
+module github.com/holoplot/rollercoaster/client
 
-go 1.23
+go 1.18
