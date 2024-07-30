@@ -18,7 +18,8 @@
 
 
 
-<img width="1280" alt="Screenshot 2024-07-30 at 03 54 51" src="https://github.com/user-attachments/assets/f533b261-452d-4181-8cdb-4c79c31ddfba">
+![immagine](https://github.com/user-attachments/assets/6d70e163-ee89-46a3-9149-fb2fb011f48d)
+
 
 
 <img width="1280" alt="Screenshot 2024-07-30 at 03 53 32" src="https://github.com/user-attachments/assets/21f7ab55-1eff-48fc-82d4-fdc551436301">
