@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namePrefix: kustomize-
+
+resources:
+  - server-deployment.yaml
+  - server-service.yaml
+  - client-deployment.yaml
+
+commonLabels:
+  app: myapp
+
+# Optional: If you want to use common annotations
+commonAnnotations:
+  channel: justopensource
+
+
