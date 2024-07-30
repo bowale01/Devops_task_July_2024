@@ -7,7 +7,7 @@
 
 
 
-# Push to DockerHub or your container registry
+#Push to dockerhub or container registry
 
 - docker push debolek/client_new:latest
 - docker push debolek/server_new:latest
