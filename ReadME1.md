@@ -21,8 +21,8 @@
 ![immagine](https://github.com/user-attachments/assets/6d70e163-ee89-46a3-9149-fb2fb011f48d)
 
 
+![immagine](https://github.com/user-attachments/assets/983decb3-3e01-469e-947d-c6ecc1b2b28e)
 
-<img width="1280" alt="Screenshot 2024-07-30 at 03 53 32" src="https://github.com/user-attachments/assets/21f7ab55-1eff-48fc-82d4-fdc551436301">
 
   
 
