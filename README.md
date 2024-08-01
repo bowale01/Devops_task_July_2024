@@ -6,7 +6,7 @@ This repository implements a simplified roller coaster simulation.
 The server runs the simulation and keeps an in-memory representation of the state while the client generates roller coaster riders.
 The client communicates with the server using HTTP.
 
-> !!! Please provide each task as a single commit !!!
+
 
 ## Task description
 
