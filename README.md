@@ -1,4 +1,4 @@
-# DevOps Engineer task assignment
+# DevOps Engineer task
 
 ## Preface
 
